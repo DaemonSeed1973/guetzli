@@ -36,6 +36,34 @@ PNG_CFLAGS="$(pkg-config --cflags libpng)"
 PNG_LIBS="$(pkg-config --libs libpng)"
 
 # ---------------------------------------------------------------------------
+# Explicit source list (mirrors the original Makefiles — excludes
+# butteraugli_main.cc which requires libjpeg and is not needed for guetzli)
+# ---------------------------------------------------------------------------
+GUETZLI_SOURCES=(
+  guetzli/butteraugli_comparator.cc
+  guetzli/dct_double.cc
+  guetzli/debug_print.cc
+  guetzli/entropy_encode.cc
+  guetzli/fdct.cc
+  guetzli/gamma_correct.cc
+  guetzli/guetzli.cc
+  guetzli/idct.cc
+  guetzli/jpeg_data.cc
+  guetzli/jpeg_data_decoder.cc
+  guetzli/jpeg_data_encoder.cc
+  guetzli/jpeg_data_reader.cc
+  guetzli/jpeg_data_writer.cc
+  guetzli/jpeg_huffman_decode.cc
+  guetzli/output_image.cc
+  guetzli/preprocess_downsample.cc
+  guetzli/processor.cc
+  guetzli/quality.cc
+  guetzli/quantize.cc
+  guetzli/score.cc
+  third_party/butteraugli/butteraugli/butteraugli.cc
+)
+
+# ---------------------------------------------------------------------------
 # Build helpers
 # ---------------------------------------------------------------------------
 build_arch() {
@@ -53,19 +81,12 @@ build_arch() {
     -I$REPO_ROOT -I$REPO_ROOT/third_party/butteraugli"
   local ldflags="$arch_flag $min_ver $PNG_LIBS"
 
-  # Collect sources
-  local sources=()
-  while IFS= read -r -d '' f; do
-    sources+=("$f")
-  done < <(find "$REPO_ROOT/guetzli" "$REPO_ROOT/third_party/butteraugli" \
-    -name '*.cc' -print0 2>/dev/null)
-
   # Compile each source
   local objects=()
-  for src in "${sources[@]}"; do
+  for src in "${GUETZLI_SOURCES[@]}"; do
     local obj="$obj_dir/$(basename "${src%.cc}").o"
     objects+=("$obj")
-    c++ $cxxflags -MMD -MP -c "$src" -o "$obj"
+    c++ $cxxflags -MMD -MP -c "$REPO_ROOT/$src" -o "$obj"
   done
 
   # Link
