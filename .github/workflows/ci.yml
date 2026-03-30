@@ -2,9 +2,9 @@ name: CI — macOS Build Check
 
 on:
   push:
-    branches: [main, "feature/**"]
+    branches: [master, "feature/**"]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   build-native:
