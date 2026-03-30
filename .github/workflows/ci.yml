@@ -1,0 +1,29 @@
+name: CI — macOS Build Check
+
+on:
+  push:
+    branches: [main, "feature/**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-native:
+    name: Build (native arch)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: brew install libpng pkg-config
+
+      - name: Build (native)
+        run: |
+          chmod +x build-macos.sh
+          ./build-macos.sh native
+
+      - name: Verify binary
+        run: |
+          file build/macos/guetzli
+          ./build/macos/guetzli --version 2>&1 || true
