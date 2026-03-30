@@ -6,8 +6,15 @@ on:
 
 jobs:
   build-macos:
-    name: Build universal macOS binary
-    runs-on: macos-latest
+    name: Build (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-latest        # Apple Silicon runner
+          - arch: x86_64
+            runner: macos-13            # Intel runner
 
     steps:
       - name: Checkout
@@ -16,12 +23,51 @@ jobs:
       - name: Install dependencies
         run: brew install libpng pkg-config
 
-      - name: Build universal binary
+      - name: Build (${{ matrix.arch }})
         run: |
           chmod +x build-macos.sh
-          ./build-macos.sh universal
+          ./build-macos.sh native
 
       - name: Verify binary
+        run: |
+          file dist/macos/guetzli
+          lipo -info dist/macos/guetzli
+
+      - name: Upload slice artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: guetzli-${{ matrix.arch }}
+          path: dist/macos/guetzli
+          retention-days: 1
+
+  create-universal:
+    name: Create universal binary
+    runs-on: macos-latest
+    needs: build-macos
+
+    steps:
+      - name: Download arm64 slice
+        uses: actions/download-artifact@v4
+        with:
+          name: guetzli-arm64
+          path: slices/arm64
+
+      - name: Download x86_64 slice
+        uses: actions/download-artifact@v4
+        with:
+          name: guetzli-x86_64
+          path: slices/x86_64
+
+      - name: Create universal binary
+        run: |
+          mkdir -p dist/macos
+          lipo -create \
+            slices/arm64/guetzli \
+            slices/x86_64/guetzli \
+            -output dist/macos/guetzli
+          chmod +x dist/macos/guetzli
+
+      - name: Verify universal binary
         run: |
           file dist/macos/guetzli
           lipo -info dist/macos/guetzli
