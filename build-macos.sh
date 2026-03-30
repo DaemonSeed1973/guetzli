@@ -15,7 +15,7 @@ set -euo pipefail
 
 ARCH="${1:-native}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUT_DIR="$REPO_ROOT/build/macos"
+OUT_DIR="$REPO_ROOT/dist/macos"
 
 echo "==> guetzli macOS build  (arch: $ARCH)"
 
@@ -40,8 +40,8 @@ PNG_LIBS="$(pkg-config --libs libpng)"
 # ---------------------------------------------------------------------------
 build_arch() {
   local arch="$1"
-  local obj_dir="$REPO_ROOT/build/obj/$arch"
-  local bin_dir="$REPO_ROOT/build/bin/$arch"
+  local obj_dir="$REPO_ROOT/dist/obj/$arch"
+  local bin_dir="$REPO_ROOT/dist/bin/$arch"
   local target="$bin_dir/guetzli"
 
   echo "  -> building $arch"
@@ -82,18 +82,18 @@ case "$ARCH" in
   native)
     native_arch="$(uname -m)"
     build_arch "$native_arch"
-    cp "$REPO_ROOT/build/bin/$native_arch/guetzli" "$OUT_DIR/guetzli"
+    cp "$REPO_ROOT/dist/bin/$native_arch/guetzli" "$OUT_DIR/guetzli"
     ;;
   arm64|x86_64)
     build_arch "$ARCH"
-    cp "$REPO_ROOT/build/bin/$ARCH/guetzli" "$OUT_DIR/guetzli"
+    cp "$REPO_ROOT/dist/bin/$ARCH/guetzli" "$OUT_DIR/guetzli"
     ;;
   universal)
     build_arch "arm64"
     build_arch "x86_64"
     lipo -create \
-      "$REPO_ROOT/build/bin/arm64/guetzli" \
-      "$REPO_ROOT/build/bin/x86_64/guetzli" \
+      "$REPO_ROOT/dist/bin/arm64/guetzli" \
+      "$REPO_ROOT/dist/bin/x86_64/guetzli" \
       -output "$OUT_DIR/guetzli"
     echo "  -> universal binary: $OUT_DIR/guetzli"
     ;;

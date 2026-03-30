@@ -25,5 +25,5 @@ jobs:
 
       - name: Verify binary
         run: |
-          file build/macos/guetzli
-          ./build/macos/guetzli --version 2>&1 || true
+          file dist/macos/guetzli
+          ./dist/macos/guetzli --version 2>&1 || true

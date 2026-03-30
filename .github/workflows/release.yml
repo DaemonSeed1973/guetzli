@@ -23,14 +23,14 @@ jobs:
 
       - name: Verify binary
         run: |
-          file build/macos/guetzli
-          lipo -info build/macos/guetzli
+          file dist/macos/guetzli
+          lipo -info dist/macos/guetzli
 
       - name: Package binary
         run: |
           TAG="${{ github.event.release.tag_name }}"
           ASSET="guetzli-${TAG}-macos-universal.tar.gz"
-          tar -czf "$ASSET" -C build/macos guetzli
+          tar -czf "$ASSET" -C dist/macos guetzli
           echo "ASSET=$ASSET" >> $GITHUB_ENV
 
       - name: Upload release asset
