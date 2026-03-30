@@ -27,13 +27,18 @@ if ! command -v pkg-config &>/dev/null; then
   exit 1
 fi
 
-if ! pkg-config --exists libpng; then
-  echo "error: libpng not found — brew install libpng" >&2
-  exit 1
+if [ -n "${LIBPNG_PREFIX:-}" ]; then
+  # Override for cross-compilation (e.g. x86_64 Rosetta brew at /usr/local)
+  PNG_CFLAGS="-I${LIBPNG_PREFIX}/include"
+  PNG_LIBS="-L${LIBPNG_PREFIX}/lib -lpng"
+else
+  if ! pkg-config --exists libpng; then
+    echo "error: libpng not found — brew install libpng" >&2
+    exit 1
+  fi
+  PNG_CFLAGS="$(pkg-config --cflags libpng)"
+  PNG_LIBS="$(pkg-config --libs libpng)"
 fi
-
-PNG_CFLAGS="$(pkg-config --cflags libpng)"
-PNG_LIBS="$(pkg-config --libs libpng)"
 
 # ---------------------------------------------------------------------------
 # Explicit source list (mirrors the original Makefiles — excludes

@@ -5,65 +5,44 @@ on:
     types: [created]
 
 jobs:
-  build-macos:
-    name: Build (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      matrix:
-        include:
-          - arch: arm64
-            runner: macos-latest        # Apple Silicon runner
-          - arch: x86_64
-            runner: macos-13            # Intel runner
+  build-universal:
+    name: Build universal macOS binary
+    runs-on: macos-latest   # Apple Silicon (arm64)
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      # arm64 deps via native Homebrew (/opt/homebrew)
+      - name: Install arm64 dependencies
         run: brew install libpng pkg-config
 
-      - name: Build (${{ matrix.arch }})
+      # x86_64 deps via Rosetta Homebrew (/usr/local)
+      - name: Install x86_64 dependencies (Rosetta)
+        run: |
+          if [ ! -f /usr/local/bin/brew ]; then
+            arch -x86_64 /bin/bash -c \
+              "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+              <<< ""
+          fi
+          arch -x86_64 /usr/local/bin/brew install libpng pkg-config
+
+      - name: Build arm64
         run: |
           chmod +x build-macos.sh
-          ./build-macos.sh native
+          ./build-macos.sh arm64
 
-      - name: Verify binary
-        run: |
-          file dist/macos/guetzli
-          lipo -info dist/macos/guetzli
+      - name: Build x86_64
+        run: ./build-macos.sh x86_64
+        env:
+          LIBPNG_PREFIX: /usr/local
 
-      - name: Upload slice artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: guetzli-${{ matrix.arch }}
-          path: dist/macos/guetzli
-          retention-days: 1
-
-  create-universal:
-    name: Create universal binary
-    runs-on: macos-latest
-    needs: build-macos
-
-    steps:
-      - name: Download arm64 slice
-        uses: actions/download-artifact@v4
-        with:
-          name: guetzli-arm64
-          path: slices/arm64
-
-      - name: Download x86_64 slice
-        uses: actions/download-artifact@v4
-        with:
-          name: guetzli-x86_64
-          path: slices/x86_64
-
-      - name: Create universal binary
+      - name: Lipo universal binary
         run: |
           mkdir -p dist/macos
           lipo -create \
-            slices/arm64/guetzli \
-            slices/x86_64/guetzli \
+            dist/bin/arm64/guetzli \
+            dist/bin/x86_64/guetzli \
             -output dist/macos/guetzli
           chmod +x dist/macos/guetzli
 
